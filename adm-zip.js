@@ -436,9 +436,10 @@ module.exports = function (/**String*/input) {
 		 * @param overwrite If the file already exists at the target path, the file will be overwriten if this is true.
 		 *                  Default is FALSE
 		 *
+		 * @param filterFunc Receive fileTarget as argument, return true to write the file.
 		 * @return Boolean
 		 */
-		extractEntryTo: function (/**Object*/entry, /**String*/targetPath, /**Boolean*/maintainEntryPath, /**Boolean*/overwrite) {
+		extractEntryTo: function (/**Object*/entry, /**String*/targetPath, /**Boolean*/maintainEntryPath, /**Boolean*/overwrite, /**Function */ filterFunc) {
 			overwrite = overwrite || false;
 			maintainEntryPath = typeof maintainEntryPath === "undefined" ? true : maintainEntryPath;
 
@@ -462,7 +463,9 @@ module.exports = function (/**String*/input) {
 					}
 					var childName = sanitize(targetPath, maintainEntryPath ? child.entryName : pth.basename(child.entryName));
 
-					Utils.writeFileTo(childName, content, overwrite);
+					if (!filterFunc || filterFunc(childName)) {
+						Utils.writeFileTo(childName, content, overwrite);
+					}
 				});
 				return true;
 			}
@@ -473,7 +476,10 @@ module.exports = function (/**String*/input) {
 			if (fs.existsSync(target) && !overwrite) {
 				throw Utils.Errors.CANT_OVERRIDE;
 			}
-			Utils.writeFileTo(target, content, overwrite);
+
+			if (!filterFunc || filterFunc(target)) {
+				Utils.writeFileTo(target, content, overwrite);
+			}
 
 			return true;
 		},
