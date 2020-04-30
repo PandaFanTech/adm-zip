@@ -239,18 +239,6 @@ module.exports = function (/**String*/input) {
 		 *               be included.
 		 */
 		addLocalFolder: function (/**String*/localPath, /**String=*/zipPath, /**=RegExp|Function*/filter) {
-			if (filter === undefined) {
-				filter = function () {
-					return true;
-				};
-			} else if (filter instanceof RegExp) {
-				filter = function (filter) {
-					return function (filename) {
-						return filter.test(filename);
-					}
-				}(filter);
-			}
-
 			if (zipPath) {
 				zipPath = zipPath.split("\\").join("/");
 				if (zipPath.charAt(zipPath.length - 1) !== "/") {
@@ -273,11 +261,14 @@ module.exports = function (/**String*/input) {
 				if (items.length) {
 					items.forEach(function (path) {
 						var p = path.split("\\").join("/").replace(new RegExp(localPath.replace(/(\(|\))/g, '\\$1'), 'i'), ""); //windows fix
-						if (filter(p)) {
+						if (filter) {
+							var filterResult = filter(p);
+						}
+						if (!filter || filterResult.addThisFile) {
 							if (p.charAt(p.length - 1) !== "/") {
-								self.addFile(zipPath + p, fs.readFileSync(path), "", 0)
+								self.addFile(zipPath + (filterResult.newName || p), fs.readFileSync(path), "", 0)
 							} else {
-								self.addFile(zipPath + p, Buffer.alloc(0), "", 0)
+								self.addFile(zipPath + (filterResult.newName || p), Buffer.alloc(0), "", 0)
 							}
 						}
 					});
